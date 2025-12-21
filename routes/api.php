@@ -10,6 +10,10 @@ use App\Http\Controllers\DosenController;
 
 use App\Models\JadwalPerkuliahan;
 
+Route::get('/test', function () {
+    return 'API Masuk!';
+});
+
 Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
