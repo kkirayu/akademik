@@ -14,7 +14,7 @@
     "env": {
         "APP_ENV": "production",
         "APP_DEBUG": "false",
-        "APP_URL": "mysql://fiscal-aqua-chipmunk:mmzpakupoylz@asia-east1-001.proxy.sevalla.app:30004/intensive-teal-ant",
+        "APP_URL": "https://api-akademik.vercel.app",
         "APP_KEY": "base64:BbU1Y4zpm2PeuvG0nspboGHcczIsHW4Rem0GGMHbbbg=",
         "APP_CONFIG_CACHE": "/tmp/config.php",
         "APP_EVENTS_CACHE": "/tmp/events.php",
@@ -29,6 +29,7 @@
         "DB_HOST": "asia-east1-001.proxy.sevalla.app",
         "DB_PORT": "30004",
         "DB_DATABASE": "intensive-teal-ant",
-        "DB_USERNAME": "fiscal-aqua-chipmunk"
+        "DB_USERNAME": "fiscal-aqua-chipmunk",
+        "DB_PASSWORD": "mmzpakupoylz"
     }
 }
