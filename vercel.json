@@ -14,7 +14,7 @@
     "env": {
         "APP_ENV": "production",
         "APP_DEBUG": "false",
-        "APP_URL": "https://api-akademik-puce.vercel.app/p",
+        "APP_URL": "https://api-akademik-puce.vercel.app",
         "APP_KEY": "base64:BbU1Y4zpm2PeuvG0nspboGHcczIsHW4Rem0GGMHbbbg=",
         "APP_CONFIG_CACHE": "/tmp/config.php",
         "APP_EVENTS_CACHE": "/tmp/events.php",
