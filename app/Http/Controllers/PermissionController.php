@@ -81,7 +81,41 @@ class PermissionController extends Controller
      */
     public function update(Request $request, Permission $permission)
     {
-        //
+        $permission = Permission::find($id);
+
+    // 2. Cek apakah data ada
+    if (!$permission) {
+        return response()->json([
+            'message' => 'Data Permission tidak ditemukan'
+        ], 404);
+    }
+
+    // 3. Validasi Input
+    $validator = Validator::make($request->all(), [
+        // Format: unique:nama_tabel,nama_kolom,id_yang_dikecualikan
+        'nama_aksi' => 'required|string|max:100|unique:permission,nama_aksi,' . $id,
+        'nama_menu' => 'required|string|max:100',
+        'deskripsi' => 'nullable|string',
+    ]);
+
+    if ($validator->fails()) {
+        return response()->json([
+            'message' => 'Validasi gagal',
+            'errors'  => $validator->errors()
+        ], 422);
+    }
+
+    // 4. Lakukan Update
+    $permission->update([
+        'nama_aksi' => $request->nama_aksi,
+        'nama_menu' => $request->nama_menu,
+        'deskripsi' => $request->deskripsi,
+    ]);
+
+    return response()->json([
+        'message' => 'Permission berhasil diperbarui',
+        'data'    => $permission
+    ], 200);
     }
 
     /**
@@ -89,6 +123,36 @@ class PermissionController extends Controller
      */
     public function destroy(Permission $permission)
     {
-        //
+        $permission = Permission::find($id);
+
+    if (!$permission) {
+        return response()->json([
+            'message' => 'Data Permission tidak ditemukan'
+        ], 404);
     }
+
+    try {
+        // 2. Hapus data
+        $permission->delete();
+
+        return response()->json([
+            'message' => 'Permission berhasil dihapus'
+        ], 200);
+
+    } catch (\Illuminate\Database\QueryException $e) {
+        // Error Code 23000: Integrity Constraint Violation
+        // Artinya permission ini sedang dipakai oleh Role tertentu
+        if ($e->getCode() == "23000") {
+            return response()->json([
+                'message' => 'Gagal menghapus. Permission ini sedang digunakan oleh Role atau User lain.',
+                'error'   => $e->getMessage()
+            ], 409); // 409 Conflict
+        }
+
+        return response()->json([
+            'message' => 'Terjadi kesalahan server.',
+            'error'   => $e->getMessage()
+        ], 500);
+    }
+}
 }

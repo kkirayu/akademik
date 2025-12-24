@@ -49,12 +49,18 @@ class JadwalPerkuliahanController extends Controller
         ], 422);
     }
 
-    // 3. Simpan data ke tabel jadwal_perkuliahans
-    // Database akan otomatis menolak jika melanggar unique constraint (bentrok)
+    
     try {
         $jadwal = JadwalPerkuliahan::create([
             'kelas_id'             => $request->kelas_id,
-            'dosen_id'             => $request->dosen_id,
+      $validator = Validator::make($request->all(), [
+        'kelas_id'              => 'required',
+        'dosen_id'              => 'required',
+        'ruangan_id'            => 'required',
+        'master_sesi_waktu_id'  => 'required',
+        'hari'                  => 'required|in:Senin,Selasa,Rabu,Kamis,Jumat',
+    ]);
+      'dosen_id'             => $request->dosen_id,
             'ruangan_id'           => $request->ruangan_id,
             'master_sesi_waktu_id' => $request->master_sesi_waktu_id,
             'hari'                 => $request->hari,
@@ -66,7 +72,7 @@ class JadwalPerkuliahanController extends Controller
         ], 201);
 
     } catch (\Illuminate\Database\QueryException $e) {
-        // Menangani error jika terjadi bentrok jadwal berdasarkan unique key di migration
+       
         return response()->json([
             'message' => 'Gagal membuat jadwal. Terjadi bentrok (Dosen/Ruangan sudah terisi pada waktu tersebut).',
             'error'   => $e->getMessage()
@@ -96,14 +102,82 @@ class JadwalPerkuliahanController extends Controller
      */
     public function update(Request $request, JadwalPerkuliahan $jadwalPerkuliahan)
     {
-        //
+        $jadwal = JadwalPerkuliahan::find($id);
+
+    if (!$jadwal) {
+        return response()->json([
+            'message' => 'Jadwal perkuliahan tidak ditemukan'
+        ], 404);
     }
+
+    // 2. Validasi Input
+    $validator = Validator::make($request->all(), [
+        'kelas_id'              => 'required',
+        'dosen_id'              => 'required',
+        'ruangan_id'            => 'required',
+        'master_sesi_waktu_id'  => 'required',
+        'hari'                  => 'required|in:Senin,Selasa,Rabu,Kamis,Jumat',
+    ]);
+
+    if ($validator->fails()) {
+        return response()->json([
+            'message' => 'Validasi gagal',
+            'errors'  => $validator->errors()
+        ], 422);
+    }
+
+    try {
+        // 3. Lakukan Update
+        $jadwal->update([
+            'kelas_id'             => $request->kelas_id,
+            'dosen_id'             => $request->dosen_id,
+            'ruangan_id'           => $request->ruangan_id,
+            'master_sesi_waktu_id' => $request->master_sesi_waktu_id,
+            'hari'                 => $request->hari,
+        ]);
+
+        return response()->json([
+            'message' => 'Jadwal perkuliahan berhasil diperbarui',
+            'data'    => $jadwal
+        ], 200);
+
+    } catch (\Illuminate\Database\QueryException $e) {
+        // Tangkap error jika update menyebabkan bentrok data (Unique Constraint di DB)
+        return response()->json([
+            'message' => 'Gagal memperbarui jadwal. Terjadi bentrok (Dosen/Ruangan/Kelas sudah terisi pada waktu tersebut).',
+            'error'   => $e->getMessage()
+        ], 409); // 409 Conflict
+    }
+}
+
 
     /**
      * Remove the specified resource from storage.
      */
     public function destroy(JadwalPerkuliahan $jadwalPerkuliahan)
     {
-        //
+        $jadwal = JadwalPerkuliahan::find($id);
+
+    if (!$jadwal) {
+        return response()->json([
+            'message' => 'Jadwal perkuliahan tidak ditemukan'
+        ], 404);
     }
+
+    // 2. Hapus data
+    try {
+        $jadwal->delete();
+
+        return response()->json([
+            'message' => 'Jadwal perkuliahan berhasil dihapus'
+        ], 200);
+
+    } catch (\Exception $e) {
+        // Antisipasi jika jadwal sudah terhubung ke tabel lain (misal absensi) dan tidak bisa dihapus
+        return response()->json([
+            'message' => 'Gagal menghapus jadwal.',
+            'error'   => $e->getMessage()
+        ], 500);
+    }
+}   
 }

@@ -78,35 +78,71 @@ class DosenController extends Controller
         }
     }
 
-    /**
-     * Display the specified resource.
-     */
+   
     public function show(Dosen $dosen)
     {
         //
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
+
     public function edit(Dosen $dosen)
     {
         //
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
+
     public function update(Request $request, Dosen $dosen)
     {
-        //
-    }
+        $validator = Validator::make($request->all(), [
+           'user_id' => 'required|exists:users,id|unique:dosens,user_id',
+            
+            'nama_depan'      => 'required|string|max:100',
+            'nama_belakang'   => 'nullable|string|max:100',
+            'gelar_depan'     => 'nullable|string|max:50',
+            'gelar_belakang'  => 'nullable|string|max:50',
+            
+           
+            'nip_dosen'       => 'required|string|max:30|unique:dosens,nip_dosen',
+            
+            
+            'email_institusi' => 'nullable|email|max:100|unique:dosens,email_institusi',
+            
+            'alamat_dosen'    => 'nullable|string',
+            'nomor_telepon'   => 'nullable|string|max:20',
+            'status_keaktifan'=> 'in:Aktif,Cuti,Pensiun', 
+        ]);
 
-    /**
-     * Remove the specified resource from storage.
-     */
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => 'Validasi gagal',
+                'errors'  => $validator->errors()
+            ], 422);
+        }
+
+        $dosen->update($request->all());
+
+        return response()->json([
+            'message' => 'Data dosen berhasil diperbarui',
+            'data'    => $dosen 
+        ], 200);
+    }
+    
+
+   
     public function destroy(Dosen $dosen)
     {
-        //
+        $dosen = Dosen ::find($id);
+
+        if (!$dosen) {
+            return response()->json([
+                'message' => 'Data dosen tidak ditemukan'
+            ], 404);
+        }
+
+        $dosen->delete();
+
+        return response()->json([
+            'message' => 'Data dosen berhasil dihapus'
+        ], 200);
     }
 }

@@ -94,14 +94,81 @@ class KrsMahasiswaController extends Controller
      */
     public function update(Request $request, KrsMahasiswa $krsMahasiswa)
     {
-        //
+        // 1. Cari data KRS
+    $krs = KrsMahasiswa::find($id);
+
+    if (!$krs) {
+        return response()->json([
+            'message' => 'Data KRS tidak ditemukan'
+        ], 404);
     }
+
+    // 2. Validasi Input
+    $validator = Validator::make($request->all(), [
+        'mahasiswa_id'      => 'required',
+        'kelas_id'          => 'required',
+        'tahun_akademik_id' => 'required',
+        'status_approval'   => 'nullable|in:Menunggu,Disetujui,Ditolak',
+        'nilai_akhir'       => 'nullable|string|max:5',
+    ]);
+
+    if ($validator->fails()) {
+        return response()->json([
+            'message' => 'Validasi gagal',
+            'errors'  => $validator->errors()
+        ], 422);
+    }
+
+    try {
+        // 3. Lakukan Update
+        $krs->update([
+            'mahasiswa_id'      => $request->mahasiswa_id,
+            'kelas_id'          => $request->kelas_id,
+            'tahun_akademik_id' => $request->tahun_akademik_id,
+            'status_approval'   => $request->status_approval ?? $krs->status_approval, // Gunakan data lama jika null
+            'nilai_akhir'       => $request->nilai_akhir,
+        ]);
+
+        return response()->json([
+            'message' => 'Data KRS berhasil diperbarui',
+            'data'    => $krs
+        ], 200);
+
+    } catch (\Illuminate\Database\QueryException $e) {
+        // Error ini muncul jika kombinasi (mahasiswa + kelas + tahun) menjadi duplikat setelah diedit
+        return response()->json([
+            'message' => 'Gagal memperbarui KRS. Mahasiswa sudah terdaftar di kelas tersebut.',
+            'error'   => $e->getMessage()
+        ], 409);
+    }
+}
 
     /**
      * Remove the specified resource from storage.
      */
     public function destroy(KrsMahasiswa $krsMahasiswa)
     {
-        //
+        $krs = KrsMahasiswa::find($id);
+
+    if (!$krs) {
+        return response()->json([
+            'message' => 'Data KRS tidak ditemukan'
+        ], 404);
     }
+
+    // 2. Hapus data
+    try {
+        $krs->delete();
+
+        return response()->json([
+            'message' => 'Data KRS berhasil dihapus (Mata kuliah dibatalkan)'
+        ], 200);
+
+    } catch (\Exception $e) {
+        return response()->json([
+            'message' => 'Gagal menghapus data KRS.',
+            'error'   => $e->getMessage()
+        ], 500);
+    }
+}
 }

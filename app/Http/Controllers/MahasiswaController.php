@@ -90,19 +90,62 @@ class MahasiswaController extends Controller
         //
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, Mahasiswa $mahasiswa)
+
+    public function update(Request $request, $id)
     {
-        //
+        
+        $mahasiswa = Mahasiswa::find($id);
+
+        // 2. Cek jika data tidak ditemukan
+        if (!$mahasiswa) {
+            return response()->json([
+                'message' => 'Data mahasiswa tidak ditemukan'
+            ], 404);
+        }
+
+        // 3. Validasi Input (Perhatikan aturan 'unique' untuk update)
+        $validator = Validator::make($request->all(), [
+            // Kita tambahkan pengecualian ID saat ini agar tidak dianggap duplikat dengan dirinya sendiri
+            'user_id'          => 'required|unique:mahasiswas,user_id,' . $id,
+            'nama_lengkap'     => 'required|string|max:255',
+            'nim'              => 'required|string|max:20|unique:mahasiswas,nim,' . $id,
+            'angkatan'         => 'required|integer',
+            'prodi_id'         => 'required',
+            'dosen_wali_id'    => 'nullable',
+            'alamat'           => 'nullable|string',
+            'nomor_telepon'    => 'nullable|string|max:20',
+            'status_mahasiswa' => 'required|in:Aktif,Cuti,Lulus,Mengundurkan Diri,DO',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => 'Validasi gagal',
+                'errors'  => $validator->errors()
+            ], 422);
+        }
+
+        $mahasiswa->update($request->all());
+
+        return response()->json([
+            'message' => 'Data mahasiswa berhasil diperbarui',
+            'data'    => $mahasiswa
+        ], 200);
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy(Mahasiswa $mahasiswa)
     {
-        //
+        $mahasiswa = Mahasiswa::find($id);
+
+        if (!$mahasiswa) {
+            return response()->json([
+                'message' => 'Data mahasiswa tidak ditemukan'
+            ], 404);
+        }
+
+        $mahasiswa->delete();
+
+        return response()->json([
+            'message' => 'Data mahasiswa berhasil dihapus'
+        ], 200);
     }
 }

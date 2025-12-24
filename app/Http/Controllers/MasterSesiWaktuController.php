@@ -78,14 +78,76 @@ class MasterSesiWaktuController extends Controller
      */
     public function update(Request $request, MasterSesiWaktu $masterSesiWaktu)
     {
-        //
+        $sesiWaktu = MasterSesiWaktu::find($id);
+
+    if (!$sesiWaktu) {
+        return response()->json([
+            'message' => 'Data Sesi Waktu tidak ditemukan'
+        ], 404);
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
+    // 2. Validasi Input
+    $validator = Validator::make($request->all(), [
+        // Validasi unique:table,column,except_id
+        // Pastikan nama tabel di database benar (misal: master_sesi_waktu)
+        'sesi_ke'     => 'required|integer|unique:master_sesi_waktu,sesi_ke,' . $id,
+        'jam_mulai'   => 'required', // Opsional: tambahkan format |date_format:H:i
+        'jam_selesai' => 'required', // Opsional: tambahkan format |date_format:H:i
+    ]);
+
+    if ($validator->fails()) {
+        return response()->json([
+            'message' => 'Validasi gagal',
+            'errors'  => $validator->errors()
+        ], 422);
+    }
+
+    // 3. Lakukan Update
+    $sesiWaktu->update([
+        'sesi_ke'     => $request->sesi_ke,
+        'jam_mulai'   => $request->jam_mulai,
+        'jam_selesai' => $request->jam_selesai,
+    ]);
+
+    return response()->json([
+        'message' => 'Data Sesi Waktu berhasil diperbarui',
+        'data'    => $sesiWaktu
+    ], 200);
+    }
+
+
     public function destroy(MasterSesiWaktu $masterSesiWaktu)
     {
-        //
+        $sesiWaktu = MasterSesiWaktu::find($id);
+
+    if (!$sesiWaktu) {
+        return response()->json([
+            'message' => 'Data Sesi Waktu tidak ditemukan'
+        ], 404);
     }
+
+    try {
+        // 2. Hapus data
+        $sesiWaktu->delete();
+
+        return response()->json([
+            'message' => 'Data Sesi Waktu berhasil dihapus'
+        ], 200);
+
+    } catch (\Illuminate\Database\QueryException $e) {
+        // Error 23000: Integrity Constraint Violation
+        // Artinya Sesi ini sedang dipakai di tabel Jadwal
+        if ($e->getCode() == "23000") {
+            return response()->json([
+                'message' => 'Gagal menghapus. Sesi waktu ini sedang digunakan dalam Jadwal Perkuliahan.',
+                'error'   => $e->getMessage()
+            ], 409);
+        }
+
+        return response()->json([
+            'message' => 'Terjadi kesalahan server.',
+            'error'   => $e->getMessage()
+        ], 500);
+    }
+}
 }

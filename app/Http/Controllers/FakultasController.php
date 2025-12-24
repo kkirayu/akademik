@@ -33,29 +33,7 @@ class FakultasController extends Controller
      */
     public function store(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'kode_fakultas' => 'required|string|max:10|unique:fakultas,kode_fakultas',
-            'nama_fakultas' => 'required|string|max:100',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'message' => 'Validasi gagal',
-                'errors' => $validator->errors()
-            ], 422);
-        }
-        // <-- Tanda kurung kurawal penutup (}) untuk blok 'if' hilang di kode Anda sebelumnya.
-        // KODE DI SINI HANYA AKAN DIJALANKAN JIKA VALIDASI BERHASIL
-
-        $fakultas = Fakultas::create([
-            'kode_fakultas' => $request->kode_fakultas,
-            'nama_fakultas' => $request->nama_fakultas,
-        ]);
-
-        return response()->json([
-            'message' => 'Fakultas berhasil dibuat',
-            'data' => $fakultas
-        ], 201);
+        
     }
 
     /**
@@ -77,16 +55,64 @@ class FakultasController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Fakultas $fakultas)
+    public function update(Request $request, Fakultas $fakultas, $id)
     {
-        //
+        // 1. Cari data berdasarkan ID
+    $fakultas = Fakultas::find($id);
+
+    // 2. Cek apakah data ditemukan
+    if (!$fakultas) {
+        return response()->json([
+            'message' => 'Data Fakultas tidak ditemukan'
+        ], 404);
+    }
+
+    // 3. Validasi Input
+    $validator = Validator::make($request->all(), [
+        // Perhatikan bagian .$id. Ini penting agar validasi mengabaikan ID saat ini
+        // Format: unique:table,column,except_id
+        'kode_fakultas' => 'required|string|max:10|unique:fakultas,kode_fakultas,' . $id,
+        'nama_fakultas' => 'required|string|max:100',
+    ]);
+
+    if ($validator->fails()) {
+        return response()->json([
+            'message' => 'Validasi gagal',
+            'errors' => $validator->errors()
+        ], 422);
+    }
+
+    // 4. Lakukan Update
+    $fakultas->update([
+        'kode_fakultas' => $request->kode_fakultas,
+        'nama_fakultas' => $request->nama_fakultas,
+    ]);
+
+    return response()->json([
+        'message' => 'Fakultas berhasil diperbarui',
+        'data' => $fakultas
+    ], 200);
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Fakultas $fakultas)
+    public function destroy(Fakultas $id)
     {
-        //
+        $fakultas = Fakultas::find($id);
+
+    // 2. Cek apakah data ditemukan
+    if (!$fakultas) {
+        return response()->json([
+            'message' => 'Data Fakultas tidak ditemukan'
+        ], 404);
+    }
+
+    // 3. Hapus data
+    $fakultas->delete();
+
+    return response()->json([
+        'message' => 'Fakultas berhasil dihapus'
+    ], 200);
     }
 }
