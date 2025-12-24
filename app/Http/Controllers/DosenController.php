@@ -2,147 +2,97 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Controller;
 use App\Models\Dosen;
-use Illuminate\Support\Facades\Validator;
+use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;   
+use Illuminate\Support\Facades\Hash; 
+use Illuminate\Support\Facades\Validator;
 
 class DosenController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index()
     {
-        $Dosen = Dosen::all();
-        return response()->json([
-            'message' => 'Daftar Dosen berhasil diambil',
-            'data' => $Dosen
-        ], 200);
+        $dosen = Dosen::with('user')->get();
+        return response()->json(['success' => true, 'data' => $dosen]);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
+    public function store(Request $request)
     {
-        //
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     */
-   public function store(Request $request)
-    {
-        // 1. Validasi
+        // Validasi Gabungan (User + Dosen)
         $validator = Validator::make($request->all(), [
-            // Cek apakah user_id ada di tabel users, dan belum dipakai di tabel dosens
-            'user_id' => 'required|exists:users,id|unique:dosens,user_id',
+            'username'      => 'required|unique:users,username',
+            'email'         => 'required|email|unique:users,email',
+            'password'      => 'required|min:6',
+            'role_id'       => 'required', 
             
-            'nama_depan'      => 'required|string|max:100',
-            'nama_belakang'   => 'nullable|string|max:100',
-            'gelar_depan'     => 'nullable|string|max:50',
-            'gelar_belakang'  => 'nullable|string|max:50',
-            
-            // Cek unik NIP di tabel dosens
-            'nip_dosen'       => 'required|string|max:30|unique:dosens,nip_dosen',
-            
-            // Cek unik Email Institusi di tabel dosens (jika diisi)
-            'email_institusi' => 'nullable|email|max:100|unique:dosens,email_institusi',
-            
-            'alamat_dosen'    => 'nullable|string',
-            'nomor_telepon'   => 'nullable|string|max:20',
-            'status_keaktifan'=> 'in:Aktif,Cuti,Pensiun', // Sesuai ENUM
+            'nama_depan'    => 'required|string',
+            'nip_dosen'     => 'required|unique:dosens,nip_dosen',
+            'status_keaktifan' => 'in:Aktif,Cuti,Pensiun',
         ]);
 
-        // 2. Cek Error
-        if ($validator->fails()) {
-            return response()->json([
-                'message' => 'Validasi gagal',
-                'errors'  => $validator->errors()
-            ], 422);
-        }
+        if ($validator->fails()) return response()->json(['errors' => $validator->errors()], 422);
 
-        // 3. Simpan Data
+        DB::beginTransaction(); // Mulai Transaksi
         try {
-            $dosen = Dosen::create($request->all());
+            // 1. Buat User
+            $user = User::create([
+                'username' => $request->username,
+                'email'    => $request->email,
+                'password' => Hash::make($request->password),
+                'role_id'  => $request->role_id,
+                'is_active'=> true,
+            ]);
 
-            return response()->json([
-                'message' => 'Data Dosen berhasil ditambahkan',
-                'data'    => $dosen
-            ], 201);
+            // 2. Buat Dosen
+            $dosen = Dosen::create([
+                'user_id'         => $user->id,
+                'nama_depan'      => $request->nama_depan,
+                'nama_belakang'   => $request->nama_belakang,
+                'gelar_depan'     => $request->gelar_depan,
+                'gelar_belakang'  => $request->gelar_belakang,
+                'nip_dosen'       => $request->nip_dosen,
+                'email_institusi' => $request->email_institusi,
+                'nomor_telepon'   => $request->nomor_telepon,
+                'status_keaktifan'=> $request->status_keaktifan ?? 'Aktif',
+            ]);
+
+            DB::commit();
+            return response()->json(['success' => true, 'data' => $dosen], 201);
+
         } catch (\Exception $e) {
-            return response()->json([
-                'message' => 'Terjadi kesalahan server',
-                'error'   => $e->getMessage()
-            ], 500);
+            DB::rollBack();
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
 
-   
-    public function show(Dosen $dosen)
+    public function show($id)
     {
-        //
+        $dosen = Dosen::with('user')->find($id);
+        return $dosen ? response()->json(['success' => true, 'data' => $dosen]) 
+                      : response()->json(['success' => false, 'message' => 'Not Found'], 404);
     }
 
-
-    public function edit(Dosen $dosen)
+    public function update(Request $request, $id)
     {
-        //
+        $dosen = Dosen::find($id);
+        if (!$dosen) return response()->json(['message' => 'Not Found'], 404);
+
+        $dosen->update($request->except(['user_id', 'nip_dosen'])); // NIP & User ID jangan diubah sembarangan
+        return response()->json(['success' => true, 'data' => $dosen]);
     }
 
-
-    public function update(Request $request, Dosen $dosen)
+    public function destroy($id)
     {
-        $validator = Validator::make($request->all(), [
-           'user_id' => 'required|exists:users,id|unique:dosens,user_id',
-            
-            'nama_depan'      => 'required|string|max:100',
-            'nama_belakang'   => 'nullable|string|max:100',
-            'gelar_depan'     => 'nullable|string|max:50',
-            'gelar_belakang'  => 'nullable|string|max:50',
-            
-           
-            'nip_dosen'       => 'required|string|max:30|unique:dosens,nip_dosen',
-            
-            
-            'email_institusi' => 'nullable|email|max:100|unique:dosens,email_institusi',
-            
-            'alamat_dosen'    => 'nullable|string',
-            'nomor_telepon'   => 'nullable|string|max:20',
-            'status_keaktifan'=> 'in:Aktif,Cuti,Pensiun', 
-        ]);
+        $dosen = Dosen::find($id);
+        if (!$dosen) return response()->json(['message' => 'Not Found'], 404);
 
-        if ($validator->fails()) {
-            return response()->json([
-                'message' => 'Validasi gagal',
-                'errors'  => $validator->errors()
-            ], 422);
-        }
+        // Hapus Usernya, Dosen otomatis terhapus (Cascade)
+        $user = User::find($dosen->user_id);
+        if ($user) $user->delete();
+        else $dosen->delete();
 
-        $dosen->update($request->all());
-
-        return response()->json([
-            'message' => 'Data dosen berhasil diperbarui',
-            'data'    => $dosen 
-        ], 200);
-    }
-    
-
-   
-    public function destroy(Dosen $dosen)
-    {
-        $dosen = Dosen ::find($id);
-
-        if (!$dosen) {
-            return response()->json([
-                'message' => 'Data dosen tidak ditemukan'
-            ], 404);
-        }
-
-        $dosen->delete();
-
-        return response()->json([
-            'message' => 'Data dosen berhasil dihapus'
-        ], 200);
+        return response()->json(['success' => true, 'message' => 'Dosen Berhasil Dihapus']);
     }
 }

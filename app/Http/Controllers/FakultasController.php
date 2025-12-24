@@ -8,111 +8,80 @@ use Illuminate\Support\Facades\Validator;
 
 class FakultasController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
+   public function index()
     {
         $fakultas = Fakultas::all();
-        return response()->json([
-            'message' => 'Daftar Fakultas berhasil diambil',
-            'data' => $fakultas
-        ], 200);
+        return response()->json(['success' => true, 'data' => $fakultas]);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
-        
-    }
+        $validator = Validator::make($request->all(), [
+            'kode_fakultas' => 'required|unique:fakultas,kode_fakultas|max:10',
+            'nama_fakultas' => 'required|string|max:100',
+        ]);
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(Fakultas $fakultas)
-    {
-        //
-    }
+        if ($validator->fails()) {
+            return response()->json(['success' => false, 'errors' => $validator->errors()], 422);
+        }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Fakultas $fakultas)
-    {
-        //
-    }
+        $fakultas = Fakultas::create($request->all());
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, Fakultas $fakultas, $id)
-    {
-        // 1. Cari data berdasarkan ID
-    $fakultas = Fakultas::find($id);
-
-    // 2. Cek apakah data ditemukan
-    if (!$fakultas) {
         return response()->json([
-            'message' => 'Data Fakultas tidak ditemukan'
-        ], 404);
+            'success' => true,
+            'message' => 'Fakultas Berhasil Ditambahkan',
+            'data'    => $fakultas
+        ], 201);
     }
 
-    // 3. Validasi Input
-    $validator = Validator::make($request->all(), [
-        // Perhatikan bagian .$id. Ini penting agar validasi mengabaikan ID saat ini
-        // Format: unique:table,column,except_id
-        'kode_fakultas' => 'required|string|max:10|unique:fakultas,kode_fakultas,' . $id,
-        'nama_fakultas' => 'required|string|max:100',
-    ]);
-
-    if ($validator->fails()) {
-        return response()->json([
-            'message' => 'Validasi gagal',
-            'errors' => $validator->errors()
-        ], 422);
-    }
-
-    // 4. Lakukan Update
-    $fakultas->update([
-        'kode_fakultas' => $request->kode_fakultas,
-        'nama_fakultas' => $request->nama_fakultas,
-    ]);
-
-    return response()->json([
-        'message' => 'Fakultas berhasil diperbarui',
-        'data' => $fakultas
-    ], 200);
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(Fakultas $id)
+    public function show($id)
     {
         $fakultas = Fakultas::find($id);
 
-    // 2. Cek apakah data ditemukan
-    if (!$fakultas) {
-        return response()->json([
-            'message' => 'Data Fakultas tidak ditemukan'
-        ], 404);
+        if ($fakultas) {
+            return response()->json(['success' => true, 'data' => $fakultas]);
+        }
+        return response()->json(['success' => false, 'message' => 'Data Tidak Ditemukan'], 404);
     }
 
-    // 3. Hapus data
-    $fakultas->delete();
+    public function update(Request $request, $id)
+    {
+        $fakultas = Fakultas::find($id);
+        if (!$fakultas) return response()->json(['success' => false, 'message' => 'Data Tidak Ditemukan'], 404);
 
-    return response()->json([
-        'message' => 'Fakultas berhasil dihapus'
-    ], 200);
+        $validator = Validator::make($request->all(), [
+            'kode_fakultas' => 'required|max:10|unique:fakultas,kode_fakultas,' . $id,
+            'nama_fakultas' => 'required|string|max:100',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['success' => false, 'errors' => $validator->errors()], 422);
+        }
+
+        $fakultas->update($request->all());
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Fakultas Berhasil Diupdate',
+            'data'    => $fakultas
+        ]);
+    }
+
+    public function destroy($id)
+    {
+        $fakultas = Fakultas::find($id);
+        if (!$fakultas) return response()->json(['success' => false, 'message' => 'Data Tidak Ditemukan'], 404);
+
+        // Cek apakah fakultas ini punya prodi? (Karena database restrict)
+        if ($fakultas->prodi()->exists()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal Hapus: Masih ada Prodi di dalam fakultas ini.'
+            ], 400);
+        }
+
+        $fakultas->delete();
+
+        return response()->json(['success' => true, 'message' => 'Fakultas Berhasil Dihapus']);
     }
 }

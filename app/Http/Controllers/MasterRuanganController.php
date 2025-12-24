@@ -2,156 +2,54 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Controller;
 use App\Models\MasterRuangan;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 
 class MasterRuanganController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index()
     {
-        $MasterRuangan = MasterRuangan::all();
-        return response()->json([
-            'message' => 'Daftar Role berhasil diambil',
-            'data' => $MasterRuangan
-        ], 200);
+        return response()->json(['success' => true, 'data' => MasterRuangan::all()]);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
-          $validator = Validator::make($request->all(), [
-            'kode_ruangan' => 'required|string|max:20|unique:master_ruangan,kode_ruangan',
-            'nama_ruangan' => 'required|string|max:100',
-            'kapasitas' => 'required',
-            'jenis_ruangan' => 'required|in:Kelas,Laboratorium,Auditorium',
-
+        $validator = Validator::make($request->all(), [
+            'kode_ruangan' => 'required|unique:master_ruangans,kode_ruangan',
+            'nama_ruangan' => 'required',
+            'kapasitas'    => 'required|integer',
+            'jenis_ruangan'=> 'in:Kelas,Laboratorium,Auditorium',
         ]);
 
-        if ($validator->fails()) {
-            return response()->json([
-                'message' => 'Validasi gagal',
-                'errors' => $validator->errors()
-            ], 422);
-        }
-        // <-- Tanda kurung kurawal penutup (}) untuk blok 'if' hilang di kode Anda sebelumnya.
-        // KODE DI SINI HANYA AKAN DIJALANKAN JIKA VALIDASI BERHASIL
+        if ($validator->fails()) return response()->json(['errors' => $validator->errors()], 422);
 
-        $MasterRuangan = MasterRuangan::create([
-            'kode_ruangan' => $request->kode_ruangan,
-            'nama_ruangan' => $request->nama_ruangan,
-            'kapasitas' => $request->kapasitas,
-            'jenia_ruangan' => $request->jenis_ruangan,
-
-        ]);
+        $ruangan = MasterRuangan::create($request->all());
+        return response()->json(['success' => true, 'data' => $ruangan], 201);
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(MasterRuangan $masterRuangan)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(MasterRuangan $masterRuangan)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, MasterRuangan $masterRuangan)
+    public function show($id)
     {
         $ruangan = MasterRuangan::find($id);
-
-    if (!$ruangan) {
-        return response()->json([
-            'message' => 'Data Ruangan tidak ditemukan'
-        ], 404);
+        return $ruangan ? response()->json(['success' => true, 'data' => $ruangan]) : response()->json(['message' => 'Not Found'], 404);
     }
 
-    // 2. Validasi Input
-    $validator = Validator::make($request->all(), [
-        // Perhatikan bagian .$id. Ini agar validasi mengabaikan kode ruangan milik data ini sendiri
-        'kode_ruangan'  => 'required|string|max:20|unique:master_ruangan,kode_ruangan,' . $id,
-        'nama_ruangan'  => 'required|string|max:100',
-        'kapasitas'     => 'required|numeric', // Tambahkan numeric agar input pasti angka
-        'jenis_ruangan' => 'required|in:Kelas,Laboratorium,Auditorium',
-    ]);
-
-    if ($validator->fails()) {
-        return response()->json([
-            'message' => 'Validasi gagal',
-            'errors'  => $validator->errors()
-        ], 422);
-    }
-
-    // 3. Lakukan Update
-    $ruangan->update([
-        'kode_ruangan'  => $request->kode_ruangan,
-        'nama_ruangan'  => $request->nama_ruangan,
-        'kapasitas'     => $request->kapasitas,
-        'jenis_ruangan' => $request->jenis_ruangan,
-    ]);
-
-    return response()->json([
-        'message' => 'Data Ruangan berhasil diperbarui',
-        'data'    => $ruangan
-    ], 200);
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(MasterRuangan $masterRuangan)
+    public function update(Request $request, $id)
     {
         $ruangan = MasterRuangan::find($id);
-
-    if (!$ruangan) {
-        return response()->json([
-            'message' => 'Data Ruangan tidak ditemukan'
-        ], 404);
+        if (!$ruangan) return response()->json(['message' => 'Not Found'], 404);
+        $ruangan->update($request->all());
+        return response()->json(['success' => true, 'data' => $ruangan]);
     }
 
-    try {
-        // 2. Hapus data
-        $ruangan->delete();
-
-        return response()->json([
-            'message' => 'Data Ruangan berhasil dihapus'
-        ], 200);
-
-    } catch (\Illuminate\Database\QueryException $e) {
-        // Error code 23000 = Integrity Constraint Violation (Data sedang dipakai tabel lain)
-        if ($e->getCode() == "23000") {
-            return response()->json([
-                'message' => 'Gagal menghapus. Ruangan ini sedang digunakan dalam Jadwal Perkuliahan.',
-                'error'   => $e->getMessage()
-            ], 409);
+    public function destroy($id)
+    {
+        $ruangan = MasterRuangan::find($id);
+        if ($ruangan) {
+            $ruangan->delete();
+            return response()->json(['success' => true, 'message' => 'Berhasil Dihapus']);
         }
-
-        return response()->json([
-            'message' => 'Terjadi kesalahan server.',
-            'error'   => $e->getMessage()
-        ], 500);
+        return response()->json(['message' => 'Not Found'], 404);
     }
-}
 }

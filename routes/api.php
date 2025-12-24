@@ -8,13 +8,15 @@ use App\Http\Controllers\RoleController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\DosenController;
 use App\Http\Controllers\MahasiswaController;
-use App\Http\Controllers\KrsMahasiswa;
+use App\Http\Controllers\KrsMahasiswaController;
 use App\Http\Controllers\MasterRuanganController;
 use App\Http\Controllers\MasterSesiWaktuController;
 use App\Http\Controllers\MataKuliahController;
 use App\Http\Controllers\ProgramStudiController;
 use App\Http\Controllers\KelasController;
-
+use App\Http\Controllers\TahunAkademikController;
+use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\GedungController;
 
 use App\Models\JadwalPerkuliahan;
 
@@ -26,52 +28,55 @@ Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
 
+
+//Akun
+Route::apiResource('mahasiswa', MahasiswaController::class);
+Route::apiResource('dosen', DosenController::class);
+
 //Role
-Route::get('roles', [RoleController::class, 'index']); // READ ALL
-Route::post('roles', [RoleController::class, 'store']);
+Route::apiResource('role', RoleController::class);
 
-//Fakultas
-Route::get('fakultas', [FakultasController::class, 'index']);
-Route::post('fakultas', [FakultasController::class, 'store']);
-
-//User
-Route::get('users', [UserController::class, 'index']);
-Route::post('users', [UserController::class, 'store']);
-
-//Dosen
-Route::get('dosens', [DosenController::class, 'index']);
-Route::post('dosens', [DosenController::class, 'store']);
-
-//Mahasiswa
-Route::get('mahasiswa', [MahasiswaController::class, 'index']);
-Route::post('mahasiswa', [MahasiswaController::class, 'store']);
-
-//Krs Mahasiswa
-Route::get('krs-mahasiswa', [KrsMahasiswaController::class, 'index']);
-Route::post('krs-mahasiswa', [KrsMahasiswaController::class, 'store']);
-
-//Master Ruangan
-Route::get('master-ruangan', [MasterRuanganController::class, 'index']);
-Route::post('master-ruangan', [MasterRuanganController::class, 'store']);
-
-//Master Sesi Waktu
-Route::get('master-sesi-waktu', [MasterSesiWaktuController::class, 'index']);
-Route::post('master-sesi-waktu', [MasterSesiWaktuController::class, 'store']);
-
-//Mata Kuliah
-Route::get('mata-kuliah', [MataKuliahController::class, 'index']);
-Route::post('mata-kuliah', [MataKuliahController::class, 'store']);
-
-//Program Studi
-Route::get('program-studi', [ProgramStudiController::class, 'index']);
-Route::post('program-studi', [ProgramStudiController::class, 'store']);
-
-// Jadwal Perkuliahan
-Route::get('jadwal-perkuliahan', [JadwalPerkuliahanController::class, 'index']);
-Route::post('jadwal-perkuliahan', [JadwalPerkuliahanController::class, 'store']);
+// Prodi & Fakultas
+Route::apiResource('fakultas', FakultasController::class);
+Route::apiResource('prodi', ProgramStudiController::class);
 
 
-// Kelas
-Route::get('kelas', [KelasController::class, 'index']);
-Route::post('kelas', [KelasController::class, 'store']);
+//Akademik
+Route::apiResource('matakuliah', MataKuliahController::class);
+Route::apiResource('tahun-akademik', TahunAkademikController::class);
+Route::apiResource('ruangan', MasterRuanganController::class);
 
+//Jadwal
+Route::apiResource('sesi-waktu', MasterSesiWaktuController::class);
+Route::apiResource('kelas', KelasController::class);
+Route::apiResource('jadwal', JadwalPerkuliahanController::class);
+Route::apiResource('krs', \App\Http\Controllers\KrsMahasiswaController::class);
+
+Route::post('/register', [AuthController::class, 'register']);
+Route::post('/login', [AuthController::class, 'login']);
+
+Route::middleware('auth:sanctum')->group(function () {
+    
+    // Auth
+    Route::post('/logout', [AuthController::class, 'logout']);
+    Route::get('/me', [AuthController::class, 'me']);
+
+    
+    Route::apiResource('jurnal-kuliah', \App\Http\Controllers\RealisasiPerkuliahanController::class);
+
+    Route::post('/penilaian-kolektif', [\App\Http\Controllers\Api\PenilaianController::class, 'store']);
+    Route::get('/penilaian-kolektif/{kelas_id}', [\App\Http\Controllers\Api\PenilaianController::class, 'show']);
+
+    Route::get('/khs', [\App\Http\Controllers\Api\HasilStudiController::class, 'lihatKhs']);
+    Route::get('/transkrip', [\App\Http\Controllers\Api\HasilStudiController::class, 'lihatTranskrip']);
+
+});
+
+Route::middleware(['auth:sanctum', 'role:Admin'])->group(function () {
+    Route::apiResource('gedung', GedungController::class);
+});
+
+// Mahasiswa dan Dosen boleh akses
+Route::middleware(['auth:sanctum', 'role:Mahasiswa,Dosen'])->group(function () {
+    // ...
+});

@@ -1,12 +1,19 @@
 <?php
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class TahunAkademik extends Model
+class Gedung extends Model
 {
     use HasFactory;
-    protected $table = 'tahun_akademiks';
+
+    protected $table = 'gedung'; 
+
     protected $guarded = ['id'];
+
+    public function ruangan() {
+        return $this->hasMany(MasterRuangan::class, 'gedung_id');
+    }
 }

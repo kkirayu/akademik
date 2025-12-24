@@ -4,6 +4,9 @@ namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
 
+use App\Models\Mahasiswa;          
+use App\Observers\GeneralObserver;  
+
 class AppServiceProvider extends ServiceProvider
 {
     /**
@@ -19,6 +22,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        // Sekarang Laravel sudah tau "Mahasiswa" itu yang dari folder Models
+        Mahasiswa::observe(GeneralObserver::class);
     }
 }

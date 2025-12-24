@@ -13,7 +13,6 @@ return new class extends Migration
             $table->id();
             $table->foreignId('mk_id')->constrained('mata_kuliahs')->onDelete('cascade');
             $table->foreignId('mk_syarat_id')->constrained('mata_kuliahs')->onDelete('cascade');
-            // Syaratnya apa? Harus sudah lulus, atau minimal nilai D, atau sedang diambil bersamaan (co-requisite)
             $table->enum('jenis_syarat', ['Wajib Lulus', 'Minimal Nilai D', 'Sedang Ambil'])->default('Wajib Lulus');
             
             $table->unique(['mk_id', 'mk_syarat_id']); // Mencegah duplikasi syarat

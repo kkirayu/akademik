@@ -2,9 +2,22 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Fakultas extends Model
 {
-    protected $guarded = ['id'];
+    use HasFactory;
+
+    protected $table = 'fakultas';
+
+    protected $fillable = [
+        'kode_fakultas',
+        'nama_fakultas',
+    ];
+
+    public function prodi()
+    {
+        return $this->hasMany(ProgramStudi::class, 'fakultas_id');
+    }
 }
