@@ -8,9 +8,45 @@ use Illuminate\Http\Request;
 
 class JadwalPerkuliahanController extends Controller
 {
-   public function index() {
-        $jadwal = JadwalPerkuliahan::with(['kelas.mataKuliah', 'dosen', 'ruangan', 'sesi'])->get();
-        return response()->json(['success'=>true, 'data'=>$jadwal]);
+   public function index(Request $request)
+    {
+        // 1. Siapkan Query (Load relasi biar lengkap datanya)
+        $query = JadwalPerkuliahan::with([
+            'kelas.mataKuliah', 
+            'ruangan.gedung', 
+            'sesi', 
+            'dosen'
+        ]);
+
+        // 2. Cek apakah ada request filter 'dosen_id'?
+        // Contoh URL: /api/jadwal?dosen_id=2
+        if ($request->has('dosen_id')) {
+            $query->where('dosen_id', $request->dosen_id);
+        }
+
+        // 3. (Bonus) Filter Hari juga bisa
+        // Contoh URL: /api/jadwal?hari=Senin
+        if ($request->has('hari')) {
+            $query->where('hari', $request->hari);
+        }
+
+        // 4. (Bonus) Filter Ruangan
+        // Contoh URL: /api/jadwal?ruangan_id=5
+        if ($request->has('ruangan_id')) {
+            $query->where('ruangan_id', $request->ruangan_id);
+        }
+
+        // 5. Eksekusi Query
+        // Urutkan berdasarkan Hari dan Jam
+        $jadwal = $query->orderByRaw("FIELD(hari, 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu')")
+                        ->orderBy('master_sesi_waktu_id', 'asc')
+                        ->get();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'List Data Jadwal Perkuliahan',
+            'data'    => $jadwal
+        ]);
     }
 
     public function store(Request $request) {
