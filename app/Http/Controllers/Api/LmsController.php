@@ -6,19 +6,48 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Carbon;
-// --- IMPORT PENTING ---
 use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary; 
 
 class LmsController extends Controller
 {
-    // ... (method uploadMateri dan listMateri biarkan saja jika sudah diperbaiki) ...
+    // --- FITUR MATERI (DOSEN) ---
+
+    public function uploadMateri(Request $request)
+    {
+        $request->validate([
+            'kelas_id' => 'required|exists:kelas,id',
+            'judul_materi' => 'required',
+            'file_materi' => 'required|file|mimes:pdf|max:10240', // Max 10MB
+        ]);
+
+        // Upload Manual pakai Facade (Anti-Gagal di Vercel)
+        $uploadedFileUrl = Cloudinary::upload($request->file('file_materi')->getRealPath(), [
+            'folder' => 'materi'
+        ])->getSecurePath();
+
+        $id = DB::table('materi_kuliah')->insertGetId([
+            'kelas_id' => $request->kelas_id,
+            'judul_materi' => $request->judul_materi,
+            'deskripsi' => $request->deskripsi,
+            'file_path' => $uploadedFileUrl, // Simpan URL Cloudinary
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        return response()->json(['success' => true, 'message' => 'Materi Berhasil Diupload', 'data_id' => $id]);
+    }
+
+    public function listMateri($kelas_id)
+    {
+        $materi = DB::table('materi_kuliah')->where('kelas_id', $kelas_id)->get();
+        // Karena di database sudah tersimpan URL lengkap (https://...), langsung return saja
+        return response()->json(['success' => true, 'data' => $materi]);
+    }
+
 
     // --- FITUR TUGAS (DOSEN & MAHASISWA) ---
 
-    /**
-     * Dosen Buat Tugas (Create)
-     * URL: POST /api/lms/tugas
-     */
+    // Dosen Buat Tugas (Create)
     public function createTugas(Request $request)
     {
         $request->validate([
@@ -30,21 +59,17 @@ class LmsController extends Controller
 
         $linkSoal = null;
 
-        // Cek apakah ada file soal yang diupload?
         if ($request->hasFile('file_soal')) {
-            // Upload Manual pakai Facade (Anti-Gagal di Vercel)
-            $uploadedFileUrl = Cloudinary::upload($request->file('file_soal')->getRealPath(), [
+            $linkSoal = Cloudinary::upload($request->file('file_soal')->getRealPath(), [
                 'folder' => 'soal_tugas'
             ])->getSecurePath();
-            
-            $linkSoal = $uploadedFileUrl;
         }
 
         DB::table('tugas_kuliah')->insert([
             'kelas_id' => $request->kelas_id,
             'judul_tugas' => $request->judul_tugas,
             'deskripsi' => $request->deskripsi,
-            'file_soal_path' => $linkSoal, // Simpan Link HTTPS atau Null
+            'file_soal_path' => $linkSoal,
             'deadline' => $request->deadline,
             'created_at' => now(),
             'updated_at' => now(),
@@ -53,10 +78,7 @@ class LmsController extends Controller
         return response()->json(['success' => true, 'message' => 'Tugas Berhasil Dibuat']);
     }
 
-    /**
-     * Mahasiswa Kumpul Tugas (Submit)
-     * URL: POST /api/lms/submit-tugas
-     */
+    // Mahasiswa Kumpul Tugas (Submit)
     public function submitTugas(Request $request)
     {
         $request->validate([
@@ -69,26 +91,25 @@ class LmsController extends Controller
             return response()->json(['message' => 'Hanya mahasiswa bisa upload tugas'], 403);
         }
 
-        // 1. Cek Deadline
+        // Cek Deadline
         $tugas = DB::table('tugas_kuliah')->where('id', $request->tugas_id)->first();
         if (Carbon::now()->greaterThan($tugas->deadline)) {
             return response()->json(['message' => 'Maaf, waktu pengumpulan sudah habis (Deadline Lewat).'], 400);
         }
 
-        // 2. Upload Jawaban ke Cloudinary (Pakai Facade)
+        // Upload Jawaban
         $linkJawaban = Cloudinary::upload($request->file('file_jawaban')->getRealPath(), [
             'folder' => 'jawaban_tugas'
         ])->getSecurePath();
 
-        // 3. Simpan / Update Submission di Database
-        // Menggunakan updateOrInsert agar jika mahasiswa upload ulang, file lama tertimpa (revisi)
+        // Simpan / Update Submission
         DB::table('pengumpulan_tugas')->updateOrInsert(
             [
                 'tugas_id' => $request->tugas_id, 
                 'mahasiswa_id' => $user->mahasiswa->id
             ],
             [
-                'file_jawaban_path' => $linkJawaban, // Simpan Link HTTPS
+                'file_jawaban_path' => $linkJawaban,
                 'waktu_pengumpulan' => now(),
                 'updated_at' => now()
             ]
@@ -96,6 +117,16 @@ class LmsController extends Controller
 
         return response()->json(['success' => true, 'message' => 'Tugas Berhasil Dikumpulkan ke Cloud!']);
     }
+    
+    // Dosen Menilai Tugas (Bonus)
+    public function nilaiTugas(Request $request, $submission_id)
+    {
+        $request->validate(['nilai' => 'required|numeric|min:0|max:100']);
+        
+        DB::table('pengumpulan_tugas')
+            ->where('id', $submission_id)
+            ->update(['nilai' => $request->nilai, 'catatan_dosen' => $request->catatan]);
 
-    // ... (method nilaiTugas biarkan saja) ...
+        return response()->json(['success' => true, 'message' => 'Nilai Disimpan']);
+    }
 }
