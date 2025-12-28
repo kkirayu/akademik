@@ -10,9 +10,30 @@ class GedungController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        //
+        // 1. Inisialisasi Query
+        $query = Gedung::query();
+
+        // 2. Fitur Pencarian (Opsional)
+        // Kalau frontend kirim params ?search=Gedung A
+        if ($request->filled('search')) {
+            $keyword = $request->search;
+            $query->where('nama_gedung', 'LIKE', "%$keyword%")
+                  ->orWhere('kode_gedung', 'LIKE', "%$keyword%")
+                  ->orWhere('lokasi', 'LIKE', "%$keyword%");
+        }
+
+        // 3. Ambil Data (Bisa tambah ->paginate(10) kalau datanya ratusan)
+        $gedungs = $query->orderBy('kode_gedung', 'asc')->get();
+
+        // 4. Return JSON
+        return response()->json([
+            'success' => true,
+            'message' => 'List Data Gedung Berhasil Diambil',
+            'total_data' => $gedungs->count(),
+            'data' => $gedungs
+        ]);
     }
 
     /**
