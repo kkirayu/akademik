@@ -9,4 +9,10 @@ class MasterRuangan extends Model
     use HasFactory;
     protected $table = 'master_ruangans';
     protected $guarded = ['id'];
+
+
+    public function gedung()
+    {
+        return $this->belongsTo(Gedung::class, 'gedung_id');
+    }
 }
