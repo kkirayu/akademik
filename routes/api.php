@@ -84,22 +84,15 @@ Route::middleware(['auth:sanctum', 'role:Mahasiswa,Dosen'])->group(function () {
 });
 
 
-        // Presensi: Generate Kode (pertemuan_id itu id dari realisasi_perkuliahan)
+        //Dosen
         Route::post('/presensi/generate-kode/{pertemuan_id}', [SmartPresensiController::class, 'generateKode']);
-        
-        // LMS: Upload Materi & Buat Tugas
         Route::post('/lms/materi', [LmsController::class, 'uploadMateri']);
         Route::post('/lms/tugas', [LmsController::class, 'createTugas']);
         Route::post('/lms/nilai-tugas/{submission_id}', [LmsController::class, 'nilaiTugas']);
  
-
-    // === AREA MAHASISWA ===
+        //Mhs
         Route::post('/presensi/submit', [SmartPresensiController::class, 'submitPresensi']);
-        
-        // LMS: Submit Tugas
         Route::post('/lms/submit-tugas', [LmsController::class, 'submitTugas']);
 
 
-    // === UMUM (Bisa Dosen & Mahasiswa) ===
-    // List materi per kelas
     Route::get('/lms/materi/{kelas_id}', [LmsController::class, 'listMateri']);
