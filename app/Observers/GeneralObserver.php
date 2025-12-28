@@ -24,7 +24,7 @@ class GeneralObserver
 
     private function log($model, $action)
     {
-        if (Auth::check()) { // Hanya catat jika ada user login
+        if (Auth::check()) {
             ActivityLog::create([
                 'user_id'    => Auth::id(),
                 'action'     => $action,
@@ -32,7 +32,6 @@ class GeneralObserver
                 'record_id'  => $model->id,
                 'ip_address' => request()->ip(),
                 'user_agent' => request()->userAgent(),
-                // 'old_values' => json_encode($model->getOriginal()), // Opsional (Advanced)
             ]);
         }
     }

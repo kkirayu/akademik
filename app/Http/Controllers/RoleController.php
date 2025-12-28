@@ -83,7 +83,6 @@ public function store(Request $request)
 
     // 3. Validasi Input
     $validator = Validator::make($request->all(), [
-        // Format: unique:nama_tabel,nama_kolom,id_pengecualian
         'nama_role' => 'required|string|max:50|unique:roles,nama_role,' . $id,
         'deskripsi' => 'nullable|string',
     ]);

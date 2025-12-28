@@ -17,6 +17,8 @@ use App\Http\Controllers\KelasController;
 use App\Http\Controllers\TahunAkademikController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\GedungController;
+use App\Http\Controllers\Api\SmartPresensiController;
+use App\Http\Controllers\Api\LmsController;
 
 use App\Models\JadwalPerkuliahan;
 
@@ -26,7 +28,7 @@ Route::get('/test', function () {
 
 Route::get('/user', function (Request $request) {
     return $request->user();
-})->middleware('auth:sanctum');
+});
 
 
 //Akun
@@ -80,3 +82,24 @@ Route::middleware(['auth:sanctum', 'role:Admin'])->group(function () {
 Route::middleware(['auth:sanctum', 'role:Mahasiswa,Dosen'])->group(function () {
     // ...
 });
+
+
+        // Presensi: Generate Kode (pertemuan_id itu id dari realisasi_perkuliahan)
+        Route::post('/presensi/generate-kode/{pertemuan_id}', [SmartPresensiController::class, 'generateKode']);
+        
+        // LMS: Upload Materi & Buat Tugas
+        Route::post('/lms/materi', [LmsController::class, 'uploadMateri']);
+        Route::post('/lms/tugas', [LmsController::class, 'createTugas']);
+        Route::post('/lms/nilai-tugas/{submission_id}', [LmsController::class, 'nilaiTugas']);
+ 
+
+    // === AREA MAHASISWA ===
+        Route::post('/presensi/submit', [SmartPresensiController::class, 'submitPresensi']);
+        
+        // LMS: Submit Tugas
+        Route::post('/lms/submit-tugas', [LmsController::class, 'submitTugas']);
+
+
+    // === UMUM (Bisa Dosen & Mahasiswa) ===
+    // List materi per kelas
+    Route::get('/lms/materi/{kelas_id}', [LmsController::class, 'listMateri']);
