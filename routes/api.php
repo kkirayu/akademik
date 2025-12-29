@@ -67,15 +67,11 @@ Route::post('/login', [AuthController::class, 'login']);
     Route::get('/khs', [\App\Http\Controllers\Api\HasilStudiController::class, 'lihatKhs']);
     Route::get('/transkrip', [\App\Http\Controllers\Api\HasilStudiController::class, 'lihatTranskrip']);
 
-Route::middleware('auth:sanctum')->group(function () {
-    
     // Auth
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/me', [AuthController::class, 'me']);
 
 
-
-});
 Route::apiResource('gedung', GedungController::class);
 
 Route::middleware(['auth:sanctum', 'role:Admin'])->group(function () {
