@@ -22,7 +22,7 @@ class LmsController extends Controller
             'kelas_id' => $request->kelas_id,
             'judul_materi' => $request->judul_materi,
             'deskripsi' => $request->deskripsi,
-            'file_path' => $request->file_link, // Simpan link langsung
+            'file_path' => $request->file_path, // Simpan link langsung
             'created_at' => now(),
             'updated_at' => now(),
         ]);
@@ -37,14 +37,14 @@ class LmsController extends Controller
             'kelas_id' => 'required|exists:kelas,id',
             'judul_tugas' => 'required',
             'deadline' => 'required|date',
-            'file_soal_link' => 'nullable|url' // Validasi berupa URL
+            'file_soal_path' => 'nullable|url' // Validasi berupa URL
         ]);
 
         DB::table('tugas_kuliah')->insert([
             'kelas_id' => $request->kelas_id,
             'judul_tugas' => $request->judul_tugas,
             'deskripsi' => $request->deskripsi,
-            'file_soal_path' => $request->file_soal_link, // Simpan link langsung
+            'file_soal_path' => $request->file_soal_path, // Simpan link langsung
             'deadline' => $request->deadline,
             'created_at' => now(),
             'updated_at' => now(),
