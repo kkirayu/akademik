@@ -19,6 +19,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\GedungController;
 use App\Http\Controllers\Api\SmartPresensiController;
 use App\Http\Controllers\Api\LmsController;
+use App\Http\Controllers\RealisasiPerkuliahanController;
 
 use App\Models\JadwalPerkuliahan;
 
@@ -34,6 +35,8 @@ Route::get('/user', function (Request $request) {
 //Akun
 Route::apiResource('mahasiswa', MahasiswaController::class);
 Route::apiResource('dosen', DosenController::class);
+
+Route::apiResource('dosen', RealisasiPerkuliahanController::class);
 
 //Role
 Route::apiResource('role', RoleController::class);
