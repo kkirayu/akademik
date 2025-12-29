@@ -36,7 +36,7 @@ Route::get('/user', function (Request $request) {
 Route::apiResource('mahasiswa', MahasiswaController::class);
 Route::apiResource('dosen', DosenController::class);
 
-Route::apiResource('dosen', RealisasiPerkuliahanController::class);
+Route::apiResource('realisasi', RealisasiPerkuliahanController::class);
 
 //Role
 Route::apiResource('role', RoleController::class);
