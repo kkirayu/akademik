@@ -31,7 +31,7 @@ return new class extends Migration
             $table->foreignId('kelas_id')->constrained('kelas')->onDelete('cascade');
             $table->string('judul_materi');
             $table->text('deskripsi')->nullable();
-            $table->string('file_path'); // Lokasi file PDF disimpan
+            $table->string('file_path')->nullable(); // Lokasi file PDF disimpan
             $table->timestamps();
         });
 

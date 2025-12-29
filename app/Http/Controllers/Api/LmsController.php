@@ -15,7 +15,7 @@ class LmsController extends Controller
         $request->validate([
             'kelas_id' => 'required|exists:kelas,id',
             'judul_materi' => 'required',
-            'file_link' => 'required|url', // Validasi berupa URL
+            'file_path' => 'required|url', // Validasi berupa URL
         ]);
 
         $id = DB::table('materi_kuliah')->insertGetId([
