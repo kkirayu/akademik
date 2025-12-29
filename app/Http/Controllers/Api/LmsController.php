@@ -15,22 +15,42 @@ class LmsController extends Controller
         $request->validate([
             'kelas_id' => 'required|exists:kelas,id',
             'judul_materi' => 'required',
-            'file_materi' => 'nullable|file|mimes:pdf|max:10240', 
+            'file_link' => 'required|url', // Validasi berupa URL
         ]);
-        $uploadedFileUrl = Cloudinary::upload($request->file('file_materi')->getRealPath(), [
-            'folder' => 'materi'
-        ])->getSecurePath();
 
         $id = DB::table('materi_kuliah')->insertGetId([
             'kelas_id' => $request->kelas_id,
             'judul_materi' => $request->judul_materi,
             'deskripsi' => $request->deskripsi,
-            'file_path' => $uploadedFileUrl, 
+            'file_path' => $request->file_link, // Simpan link langsung
             'created_at' => now(),
             'updated_at' => now(),
         ]);
 
-        return response()->json(['success' => true, 'message' => 'Materi Berhasil Diupload', 'data_id' => $id]);
+        return response()->json(['success' => true, 'message' => 'Link Materi Berhasil Disimpan', 'data_id' => $id]);
+    }
+
+    // Buat Tugas (Sekarang menggunakan Link Soal)
+    public function createTugas(Request $request)
+    {
+        $request->validate([
+            'kelas_id' => 'required|exists:kelas,id',
+            'judul_tugas' => 'required',
+            'deadline' => 'required|date',
+            'file_soal_link' => 'nullable|url' // Validasi berupa URL
+        ]);
+
+        DB::table('tugas_kuliah')->insert([
+            'kelas_id' => $request->kelas_id,
+            'judul_tugas' => $request->judul_tugas,
+            'deskripsi' => $request->deskripsi,
+            'file_soal_path' => $request->file_soal_link, // Simpan link langsung
+            'deadline' => $request->deadline,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        return response()->json(['success' => true, 'message' => 'Tugas Berhasil Dibuat dengan Link Soal']);
     }
 
     public function listMateri($kelas_id)
@@ -39,37 +59,6 @@ class LmsController extends Controller
         return response()->json(['success' => true, 'data' => $materi]);
     }
 
-
-    // Dosen Buat Tugas (Create)
-    public function createTugas(Request $request)
-    {
-        $request->validate([
-            'kelas_id' => 'required|exists:kelas,id',
-            'judul_tugas' => 'required',
-            'deadline' => 'required|date',
-            'file_soal' => 'nullable|text' 
-        ]);
-
-        $linkSoal = null;
-
-        if ($request->hasFile('file_soal')) {
-            $linkSoal = Cloudinary::upload($request->file('file_soal')->getRealPath(), [
-                'folder' => 'soal_tugas'
-            ])->getSecurePath();
-        }
-
-        DB::table('tugas_kuliah')->insert([
-            'kelas_id' => $request->kelas_id,
-            'judul_tugas' => $request->judul_tugas,
-            'deskripsi' => $request->deskripsi,
-            'file_soal_path' => $linkSoal,
-            'deadline' => $request->deadline,
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-
-        return response()->json(['success' => true, 'message' => 'Tugas Berhasil Dibuat']);
-    }
 
     public function submitTugas(Request $request)
     {

@@ -7,59 +7,37 @@ use Illuminate\Http\Request;
 
 class RealisasiPerkuliahanController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index()
     {
-        //
+        $data = RealisasiPerkuliahan::with(['ruangan', 'dosen'])->get();
+        return response()->json(['success' => true, 'data' => $data]);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
-        //
+        $validated = $request->validate([
+            'kelas_id' => 'required|exists:kelas,id',
+            'tanggal_aktual' => 'required|date',
+            'jam_mulai_aktual' => 'required',
+            'jam_selesai_aktual' => 'required',
+            'ruangan_id' => 'required|exists:master_ruangans,id',
+            'dosen_pengajar_id' => 'required|exists:dosens,id',
+            'topik_pembahasan' => 'nullable|string',
+            'status_pertemuan' => 'required|in:Terlaksana,Dibatalkan,Pengganti,Kosong',
+        ]);
+
+        $realisasi = RealisasiPerkuliahan::create($validated);
+
+        return response()->json([
+            'success' => true, 
+            'message' => 'Jurnal perkuliahan berhasil disimpan', 
+            'data' => $realisasi
+        ]);
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(RealisasiPerkuliahan $realisasiPerkuliahan)
+    public function show($id)
     {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(RealisasiPerkuliahan $realisasiPerkuliahan)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, RealisasiPerkuliahan $realisasiPerkuliahan)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(RealisasiPerkuliahan $realisasiPerkuliahan)
-    {
-        //
+        $realisasi = RealisasiPerkuliahan::findOrFail($id);
+        return response()->json(['success' => true, 'data' => $realisasi]);
     }
 }
