@@ -76,7 +76,7 @@ class HasilStudiController extends Controller
 
         $krsData = KrsMahasiswa::with(['kelas.mataKuliah'])
                     ->where('mahasiswa_id', $user->mahasiswa->id)
-                    ->whereNotNull('nilai_akhir') // Hanya yang sudah ada nilainya
+                    ->whereNotNull('nilai_akhir') 
                     ->get();
 
         $totalSks = 0;
@@ -98,11 +98,9 @@ class HasilStudiController extends Controller
             'nim' => $user->mahasiswa->nim,
             'ipk_kumulatif' => $ipk,
             'total_sks_lulus' => $totalSks,
-            // 'data_lengkap' => $krsData // Bisa dibuka kalau mau liat semua list
         ]);
     }
 
-    // Helper Konversi Nilai
     private function konversiNilai($huruf) {
         return match ($huruf) {
             'A'  => 4.00,
@@ -114,7 +112,7 @@ class HasilStudiController extends Controller
             'C'  => 2.00,
             'D'  => 1.00,
             'E'  => 0.00,
-            default => null, // Jika T (Tunda) atau kosong
+            default => null, 
         };
     }
 }

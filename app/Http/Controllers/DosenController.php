@@ -20,7 +20,6 @@ class DosenController extends Controller
 
     public function store(Request $request)
     {
-        // Validasi Gabungan (User + Dosen)
         $validator = Validator::make($request->all(), [
             'username'      => 'required|unique:users,username',
             'email'         => 'required|email|unique:users,email',
@@ -79,7 +78,7 @@ class DosenController extends Controller
         $dosen = Dosen::find($id);
         if (!$dosen) return response()->json(['message' => 'Not Found'], 404);
 
-        $dosen->update($request->except(['user_id', 'nip_dosen'])); // NIP & User ID jangan diubah sembarangan
+        $dosen->update($request->except(['user_id', 'nip_dosen'])); 
         return response()->json(['success' => true, 'data' => $dosen]);
     }
 
@@ -88,7 +87,6 @@ class DosenController extends Controller
         $dosen = Dosen::find($id);
         if (!$dosen) return response()->json(['message' => 'Not Found'], 404);
 
-        // Hapus Usernya, Dosen otomatis terhapus (Cascade)
         $user = User::find($dosen->user_id);
         if ($user) $user->delete();
         else $dosen->delete();

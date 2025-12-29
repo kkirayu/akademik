@@ -31,25 +31,17 @@ class PenilaianController extends Controller
             return response()->json(['message' => 'Kelas tidak ditemukan'], 404);
         }
 
-        // (Opsional) Cek apakah Dosen yang login berhak menilai kelas ini?
-        // if ($request->user()->dosen->id != $kelas->jadwal->dosen_id) { ... }
-
-        // 3. Proses Simpan Massal (Looping)
         DB::beginTransaction();
         try {
             $berhasil = 0;
             
             foreach ($request->data_nilai as $item) {
-                // Cari data KRS mahasiswa tersebut di kelas ini
                 $krs = KrsMahasiswa::where('kelas_id', $request->kelas_id)
                                    ->where('mahasiswa_id', $item['mahasiswa_id'])
                                    ->first();
-
-                // Jika ketemu, update nilainya
                 if ($krs) {
                     $krs->update([
                         'nilai_akhir' => $item['nilai_huruf'],
-                        // Otomatis disetujui jika nilai sudah keluar
                         'status_approval' => 'Disetujui' 
                     ]);
                     $berhasil++;
@@ -70,9 +62,6 @@ class PenilaianController extends Controller
         }
     }
     
-    /**
-     * Lihat Rekap Nilai Satu Kelas
-     */
     public function show($kelas_id)
     {
         $nilai = KrsMahasiswa::with('mahasiswa')
